@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Asistente Interactivo</title>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; background-color: #f0f2f5; margin: 0; height: 100vh; overflow: hidden; }
+        
+        /* --- NUEVA ESTRUCTURA PRINCIPAL --- */
+        #main-container {
+            display: flex;
+            height: 100%;
+        }
+
+        /* --- COLUMNA DEL CHAT --- */
+        #chat-col {
+            flex: 0 0 450px; /* Ancho fijo para el chat */
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            border-right: 1px solid #dcdfe2;
+        }
+        #chat-window { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        #chat-form { display: flex; padding: 15px; border-top: 1px solid #dcdfe2; gap: 10px; }
+        #chat-input { flex-grow: 1; border: 1px solid #ccd0d5; border-radius: 20px; padding: 10px 18px; font-size: 16px; resize: none; }
+        #chat-input:focus { outline: none; border-color: #007bff; }
+        button { background-color: #007bff; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        
+        .message { max-width: 85%; padding: 12px 18px; border-radius: 20px; line-height: 1.5; word-wrap: break-word; }
+        .user-message { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .ai-message { background-color: #e4e6eb; color: #050505; align-self: flex-start; border-bottom-left-radius: 4px; }
+        
+        /* --- NUEVA COLUMNA DEL INFORME --- */
+        #report-col {
+            flex-grow: 1; /* Ocupa el resto del espacio */
+            padding: 25px;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+        #report-placeholder { color: #888; text-align: center; margin-top: 40px; }
+
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <div id="chat-col">
+            <div id="chat-window">
+                <div class="message ai-message">Hola, soy el asistente de MCP. Pídeme un informe o conversemos.</div>
+            </div>
+            <form id="chat-form">
+                <input type="text" id="chat-input" placeholder="Escribe tu mensaje..." autocomplete="off" required>
+                <button type="submit" title="Enviar">▲</button>
+            </form>
+        </div>
+
+        <div id="report-col">
+            <div id="report-placeholder">
+                <h2>Panel de Visualización</h2>
+                <p>Aquí se mostrarán los informes generados.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatWindow = document.getElementById('chat-window');
+        const reportColumn = document.getElementById('report-col'); // El nuevo panel
+        const reportPlaceholder = document.getElementById('report-placeholder');
+
+        chatForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const userMessage = chatInput.value.trim();
+            if (userMessage === '') return;
+
+            addTextMessage(userMessage, 'user-message');
+            chatInput.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+                
+                const data = await response.json();
+
+                // --- LÓGICA DE RENDERIZADO (MODIFICADA) ---
+                if (data.html_report) {
+                    // Si la respuesta contiene HTML, lo renderizamos en el panel derecho
+                    renderReport(data.html_report);
+                }
+                if (data.text_response) {
+                    // Si es texto, lo mostramos como un mensaje en el chat
+                    addTextMessage(data.text_response, 'ai-message');
+                }
+
+            } catch (error) {
+                console.error('No se pudo contactar al servidor:', error);
+                addTextMessage('Hubo un problema de conexión.', 'ai-message');
+            }
+        });
+
+        function addTextMessage(text, className) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', className);
+            messageElement.textContent = text;
+            chatWindow.appendChild(messageElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function renderReport(htmlContent) {
+            // Oculta el mensaje inicial
+            if(reportPlaceholder) {
+                reportPlaceholder.style.display = 'none';
+            }
+            // Inserta el HTML directamente en el panel de informes
+            reportColumn.innerHTML = htmlContent;
+        }
+    </script>
+</body>
+</html>

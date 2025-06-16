@@ -1,0 +1,42 @@
+# Prompt para Informe Diario del Cobre v2.0
+
+## Instrucciones Generales
+- Tu única tarea es generar un informe en formato HTML basado en los datos proporcionados a continuación.
+- Todos los datos necesarios (precios, inventarios, tipos de cambio y noticias) ya han sido recolectados y se encuentran en la sección "DATOS RECOLECTADOS". No intentes buscar información adicional.
+- Si la información proporcionada para una sección del informe no es suficiente, OMITE ESA SECCIÓN del informe final.
+- La fecha del informe es hoy. Las noticias proporcionadas son de los últimos 7 días.
+
+## Reglas de Procesamiento de Datos
+- Todos los precios deben mostrarse en dólares por libra (USD/lb).
+- Utiliza las siguientes fórmulas de conversión si es necesario:
+  - LME ($/tonelada): Dividir el valor entre 2,204.62.
+  - SHFE (yuan/tonelada): Multiplicar por el valor del tipo de cambio USD/CNY proporcionado y luego dividir entre 2,204.62.
+
+## Estructura del Informe
+El informe debe seguir rigurosamente la siguiente estructura en tres partes:
+
+1.  **Resumen Ejecutivo**
+    - Comienza con una barra de sentimiento (alcista/bajista/neutral).
+    - Resume los principales movimientos de precios de las últimas 24 horas. 
+    - Menciona los eventos clave que impactan el mercado.
+    - Ofrece una perspectiva general a corto plazo (24-48 horas).
+
+2.  **Perspectivas y Pronósticos**
+    - Previsiones a corto plazo (1-7 días).
+    - Previsiones a medio plazo (1-4 semanas).
+    - Factores a vigilar en los próximos días.
+
+3.  **Análisis de Precios**
+    - Crea una tabla HTML para los precios actuales de LME, SHFE y COMEX, convertidos a USD/lb. 
+    - La tabla debe incluir columnas para comparación con el día anterior y la semana anterior (variación en USD y %).
+    - Analiza los factores macroeconómicos relevantes (política monetaria, tipos de cambio) basados en los datos proporcionados.
+
+## Formato del Informe HTML
+- El informe final debe ser un único bloque de código HTML.
+- Sigue el formato y los estilos del archivo de ejemplo que se proporciona al final de este prompt.
+- Características obligatorias:
+  - Ancho máximo de 500px.
+  - Estilos inline en todos los elementos para compatibilidad con Outlook. 
+  - Estructura basada en tablas HTML.
+  - Color de títulos: `#8B4513`.
+  - Colores para variaciones: `green` (positivas) y `red` (negativas).

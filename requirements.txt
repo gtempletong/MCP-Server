@@ -1,0 +1,12 @@
+slack_bolt
+supabase
+gspread
+google-generativeai
+python-dotenv
+markdown2
+Anthropic
+pinecone-client
+google-api-python-client
+supabase
+pandas
+oauth2client

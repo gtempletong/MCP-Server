@@ -1,0 +1,13 @@
+# Archivos de entorno y credenciales
+.env
+google_credentials.json
+
+# Carpeta del entorno virtual de Python
+.venv/
+
+# Carpetas de caché de Python
+__pycache__/
+
+# Carpetas de configuración del editor de código
+.vscode/
+.idea/
