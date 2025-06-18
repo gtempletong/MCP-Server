@@ -1,0 +1,26 @@
+sheet_header,series_name,description,unit,category,source
+COMEX,COMEX,Precio del Cobre de Alto Grado en el COMEX,USD/lb,precio,COMEX
+LME,LME,Precio del Cobre a 3 meses en el London Metal Exchange,USD/tonne,precio,LME
+SHFE,SHFE,Precio del Cobre en el Shanghai Futures Exchange,CNY/tonne,precio,SHFE
+Inventarios LME,Inventarios LME,Stock de Cobre en las bodegas certificadas de LME,tonnes,inventario,LME
+Inventarios COMEX,Inventarios COMEX,Stock de Cobre en las bodegas certificadas de COMEX,tonnes,inventario,COMEX
+Inventarios SHFE,Inventarios SHFE,Stock de Cobre en las bodegas certificadas de Shanghai,tonnes,inventario,COMEX
+Inventarios Totales,Inventarios Totales,Suma de inventarios en bodegas LME COMEX y SHFE,tonnes,inventario,LME COMEX SHFE 
+DXY Curncy,DXY Curncy,Índice del Dólar Estadounidense (ICE),puntos,moneda,ICE
+CLP Curncy,CLP Curncy,Tipo de Cambio Dólar Americano a Peso Chileno,CLP,moneda,Mercado
+CNY Curncy,CNY Curncy,Tipo de Cambio Dólar Americano a Yuan Chino,CNY,moneda,Mercado
+Chile TPM,Chile TPM,Tasa de politica monetaria BC de Chile,Tasa,Tasa,Mercado
+US TPM,US TPM,Tasa de politica monetaria FED,Tasa,Tasa,Mercado
+Chile Country Risk 5Y,Chile Country Risk 5Y,Riesgo Pais de Chile,Tasa,Tasa,Mercado
+Chile Country Risk 10Y,Chile Country Risk 10Y,Riesgo Pais de Chile,Tasa,Tasa,Mercado
+IPSA,IPSA,Índice principal de la Bolsa de Santiago,puntos,equity,Bolsa de Santiago
+IPSASD,IPSASD,Índice principal de la Bolsa de Santiago sin dividendos,puntos,equity,Bolsa de Santiago
+IPSA EPS TTM,IPSA EPS TTM,Utilidad por accion del IPSA últimos 12 meses,pesos por acción,equity,Bolsa de Santiago
+IPSA EBITDA TTM,IPSA EBITDA TTM,EBITDA acciones del IPSA últimos 12 meses,pesos,equity,Bolsa de Santiago
+IPSA Revenue TTM,IPSA Revenue TTM,Ventas acciones del IPSA últimos 12 meses,pesos,equity,Bolsa de Santiago
+IPSA EV/EBITDA,IPSA EV/EBITDA,Ratio EV/EBITDA,ratio,equity,Bolsa de Santiago
+IPSA Best PE Ratio,IPSA Best PE Ratio,Ratio P/U,ratio,equity,Bolsa de Santiago
+IPSA PE Ratio,IPSA PE Ratio,Ratio P/U,ratio,equity,Bolsa de Santiago
+MSCI EEM Index,MSCI EEM Index,Índice Mercados Emergentes MSCI,puntos,equity,MSCI
+MSCI EEM Index Best PE Ratio,MSCI EEM Index Best PE Ratio,Ratio P/U,ratio,equity,MSCI
+MSCI EEM Index  PE Ratio,MSCI EEM Index  PE Ratio,Ratio P/U,ratio,equity,MSCI

@@ -1,0 +1,69 @@
+# MCP-SERVER: Interfaz de Chat del Agente de IA
+
+## 1. Visión General
+
+Esta carpeta contiene el **cerebro y corazón** del proyecto MCP-SERVER: una aplicación web construida con **Flask** que sirve como la interfaz principal para interactuar con un agente de IA avanzado para el análisis de mercados.
+
+Esta aplicación (`app.py`) funciona como un orquestador que:
+* Recibe y comprende las peticiones de un usuario en lenguaje natural.
+* Consulta una base de conocimiento interna y actualizada en Supabase.
+* Utiliza modelos de lenguaje de última generación (Claude, GPT, Gemini) para razonar.
+* Genera informes, análisis y respuestas conversacionales.
+
+Aunque esta es la aplicación principal, su inteligencia depende de un ecosistema de servicios de datos que se ejecutan de forma independiente para nutrir su base de conocimiento.
+
+## 2. Arquitectura del Ecosistema
+
+Para funcionar, este agente se apoya en dos pipelines de datos que alimentan su "memoria" (la base de datos en Supabase) y en una serie de herramientas que le permiten buscar información.
+
+* **El Cerebro (`app.py`):**
+    * **Orquestador Central:** Interpreta la intención del usuario (generar informe, editar, preguntar).
+    * **Motor de Razonamiento:** Utiliza modelos de IA para sintetizar información.
+    * **Caja de Herramientas:** Puede decidir usar herramientas internas (`get_market_data`, `get_news_articles`) que consultan su propia base de datos, o herramientas externas (`Google Search`) como plan B.
+
+* **Los Alimentadores de Datos (Servicios Externos):**
+    1.  **Pipeline de Datos Cuantitativos (`Ingestors`):** Un servicio que lee datos de mercado de alta calidad (originados en Bloomberg), los procesa y los carga en Supabase. Proporciona la "verdad objetiva" numérica.
+    2.  **Pipeline de Datos Cualitativos (`news_ingestion_service`):** Un servicio que rastrea fuentes de noticias, utiliza IA para scrapear y resumir artículos, y los carga en Supabase. Proporciona el "contexto narrativo".
+
+* **La Memoria a Largo Plazo (`Supabase`):**
+    * Una base de datos PostgreSQL que centraliza todo el conocimiento del agente, desde datos de series de tiempo hasta resúmenes de noticias y los informes que el propio agente ha generado.
+
+## 3. Flujo de Trabajo del Usuario
+
+1.  **Ingesta de Datos:** Los pipelines de datos se ejecutan (idealmente de forma programada) para asegurar que la base de conocimiento en Supabase esté actualizada.
+2.  **Inicio de la Aplicación:** El usuario inicia esta aplicación Flask (`app.py`).
+3.  **Interacción:** El usuario abre la interfaz web y escribe una petición (ej: "Genera el informe de cobre").
+4.  **Procesamiento:** `app.py` detecta la intención, consulta las tablas `time_series_data` y `news_articles` en Supabase para obtener el contexto necesario.
+5.  **Generación:** Construye un prompt complejo con los datos recolectados y se lo envía a un modelo de IA (ej: Claude) para generar el informe en formato HTML.
+6.  **Presentación y Guardado:** El HTML generado se muestra al usuario en el navegador y se guarda como un "artefacto" en Supabase para futuras ediciones.
+
+## 4. Stack Tecnológico
+
+* **Backend:** Python, Flask
+* **Base de Datos:** Supabase (PostgreSQL)
+* **Modelos de IA:** Anthropic (Claude 3), OpenAI (GPT), Google (Gemini)
+* **APIs y Servicios Clave:** Google Drive/Sheets, Firecrawl, Google Search
+* **Librerías Principales:** `supabase-py`, `gspread`, `pandas`, `anthropic`, `openai`, `google-generativeai`
+
+## 5. Guía de Instalación
+
+**Nota Importante:** Todos los comandos de instalación y configuración se deben ejecutar desde la **carpeta raíz del proyecto (`MCP-SERVER/`)**, no desde esta carpeta (`Chat_Interface/`).
+
+1.  **Activar Entorno Virtual:** Desde la raíz del proyecto, activa el entorno:
+    * Windows (PowerShell): `.\.venv\Scripts\Activate.ps1`
+    * macOS/Linux: `source .venv/bin/activate`
+2.  **Instalar Dependencias:** `pip install -r requirements.txt` (usando el archivo de la raíz del proyecto).
+3.  **Configurar Variables de Entorno:** Asegúrate de que el archivo `.env` en la raíz del proyecto esté completo con todas las claves de API (Supabase, Google, Claude, etc.).
+4.  **Credenciales de Google:** El archivo `google_credentials.json` debe estar en la raíz del proyecto.
+
+## 6. Cómo Ejecutar el Sistema
+
+### a) Alimentar la Base de Datos (Paso Previo)
+Antes de iniciar el chat, asegúrate de que la base de datos tenga datos. Ejecuta los pipelines desde la **carpeta raíz**:
+
+```bash
+# Actualizar datos de mercado
+python Ingestors/run_pipeline.py
+
+# Actualizar noticias
+python news_ingestion_service/ingestor_main.py

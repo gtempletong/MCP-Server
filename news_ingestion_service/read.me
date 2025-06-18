@@ -1,0 +1,62 @@
+# News Ingestion Service
+
+## 1. Descripción General
+
+Este servicio es un pipeline de ETL (Extract, Transform, Load) automatizado y modular, diseñado para nutrir la base de datos principal con datos cualitativos actualizados. Su única responsabilidad es encontrar, procesar y almacenar noticias relevantes del sector de metales y commodities.
+
+Funciona como uno de los "alimentadores de inteligencia" para el agente de IA principal del proyecto MCP-SERVER, proporcionando el contexto narrativo y los eventos de mercado que los datos numéricos por sí solos no pueden ofrecer.
+
+## 2. Flujo Lógico del Proceso
+
+El servicio opera siguiendo una secuencia de pasos orquestada por `ingestor_main.py`:
+
+1.  **Obtener Tareas:** Se conecta a la base de datos de Supabase y consulta la tabla `news_topics` para obtener una lista de todos los temas que están marcados como activos (`is_active = true`).
+2.  **Extraer Fuente Principal:** Realiza una única petición a una fuente de noticias central (un feed RSS de `Metal.com`) para descargar una lista de todos los artículos publicados recientemente.
+3.  **Procesar por Tema:** Itera sobre cada tema activo (ej: "cobre").
+4.  **Evitar Duplicados:** Para el tema actual, consulta la tabla `news_articles` para obtener los links de todas las noticias que ya han sido procesadas y guardadas previamente.
+5.  **Filtrar Novedades:** Compara la lista total de artículos del RSS con los ya existentes, y crea una nueva lista que contiene únicamente los artículos nuevos y relevantes para el tema.
+6.  **Procesamiento Profundo (por artículo nuevo):**
+    a. **Scraping Robusto (`Extract`):** Utiliza la API del servicio **Firecrawl** para extraer el contenido principal y limpio del artículo desde su URL, evitando problemas de JavaScript, bloqueos o CAPTCHAs.
+    b. **Resumen con IA (`Transform`):** Envía el contenido extraído a la API de **Anthropic**, pidiéndole al modelo **Claude 3 Haiku** que genere un resumen ejecutivo, conciso y objetivo, actuando como un analista de mercado experto.
+    c. **Guardado en Base de Datos (`Load`):** Inserta la información procesada (título, URL, tema, y el resumen generado por la IA) como una nueva fila en la tabla `news_articles`.
+7.  **Actualizar Estado:** Una vez que todas las noticias nuevas de un tema han sido procesadas, actualiza la tabla `news_topics` con la fecha y hora actuales para registrar la última vez que se buscó información para ese tema.
+
+## 3. Estructura de Archivos
+
+El servicio está dividido en módulos con responsabilidades claras:
+
+* **`ingestor_main.py`**: El **orquestador**. Contiene la lógica principal del pipeline y dirige el flujo de trabajo.
+* **`database_manager.py`**: La **capa de acceso a datos**. Centraliza toda la comunicación (lecturas y escrituras) con la base de datos de Supabase.
+* **`processing_utils.py`**: La **fábrica de procesamiento**. Maneja todas las interacciones con APIs externas (RSS, Firecrawl, Anthropic/Claude) y la lógica de transformación de datos.
+* **`config.py`**: Un archivo simple para centralizar la carga de las claves de API y otras configuraciones desde el archivo `.env` principal del proyecto.
+
+## 4. Dependencias y Tecnologías
+
+* **Lenguaje:** Python 3.9+
+* **Base de Datos:** Supabase (PostgreSQL)
+* **Servicios Externos:**
+    * Firecrawl API (para scraping)
+    * Anthropic API (para resúmenes con IA)
+* **Librerías Clave:** `supabase-py`, `feedparser`, `requests`, `anthropic`, `python-dotenv`.
+
+## 5. Configuración
+
+Este servicio obtiene su configuración del archivo `.env` ubicado en la raíz del proyecto (`MCP-SERVER/.env`). Las claves específicas que necesita son:
+
+* `SUPABASE_URL`
+* `SUPABASE_KEY`
+* `ANTHROPIC_API_KEY`
+* `FIRECRAWL_API_KEY`
+
+## 6. Cómo Ejecutar el Servicio
+
+Este servicio está diseñado para ser ejecutado de forma independiente, idealmente de manera programada (ej. cada X horas) para mantener la base de datos actualizada.
+
+Para una ejecución manual:
+
+1.  Asegúrate de estar en la carpeta raíz del proyecto (`MCP-SERVER`).
+2.  Activa el entorno virtual principal: `.\.venv\Scripts\Activate.ps1` (en Windows).
+3.  Ejecuta el script principal del servicio:
+    ```bash
+    python news_ingestion_service/ingestor_main.py
+    ```
