@@ -1,4 +1,5 @@
-# Chat_Interface/app.py - VERSIÓN FINAL (ITERACIONES + PARSEO HTML ROBUSTO)
+# quantex/api/server.py
+# El cerebro y orquestador principal de la aplicación Quantex.
 
 import os
 import sys
@@ -9,23 +10,27 @@ import pytz
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
-# --- CONFIGURACIÓN DE RUTAS E IMPORTACIONES ---
+# --- LÓGICA DE RUTAS PARA LA NUEVA ESTRUCTURA ---
+# Añadimos la raíz del proyecto al path de Python para que las importaciones funcionen.
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_dir)
+api_dir = os.path.dirname(current_dir)
+project_root = os.path.dirname(api_dir)
 sys.path.append(project_root)
 
+# --- IMPORTACIÓN DE MÓDULOS DESDE LA NUEVA ESTRUCTURA ---
 try:
-    from data_workers.query_reformulator_agent import reformulate_query
-    from data_workers.tool_router_agent import decide_tool_to_use
-    print("✅ Módulos de data_workers importados.")
+    from quantex.agents.reformulator import reformulate_query
+    from quantex.agents.planner import decide_tool_to_use
+    print("✅ Módulos de agentes importados correctamente.")
 except ImportError as e:
-    print(f"❌ ERROR al importar data_workers: {e}")
+    print(f"❌ ERROR al importar agentes: {e}")
+    # Funciones falsas para poder arrancar en caso de error
     def reformulate_query(query): return query
     def decide_tool_to_use(query): return {"tool_name": "error", "argument": "Módulos no encontrados."}
 
 # --- CONFIGURACIÓN E INICIALIZACIÓN ---
 load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates') # Indicamos a Flask dónde están las plantillas
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 CHILE_TZ = pytz.timezone('America/Santiago')
 
@@ -91,7 +96,8 @@ def get_market_data(series_name: str, date_filter: str = None, days_ago: int = N
 TOOL_MAPPING = { "get_news_articles": get_news_articles, "get_market_data": get_market_data, }
 
 @app.route("/")
-def home(): return render_template("index.html")
+def home():
+    return render_template("index.html")
 
 @app.route("/chat", methods=['POST'])
 def chat():
@@ -115,22 +121,20 @@ def chat():
             
             prev_artifact = artifact_res.data
             prompt_file_name = f"prompt_{prev_artifact['artifact_type']}.txt"
-            with open(os.path.join(project_root, 'Prompts', prompt_file_name), 'r', encoding='utf-8') as f:
+            prompt_path = os.path.join(project_root, 'prompts', prompt_file_name)
+            with open(prompt_path, 'r', encoding='utf-8') as f:
                 synthesis_system_prompt = f.read()
 
             final_prompt_for_llm = f"""DATOS ORIGINALES (NO CAMBIAN):
 ---
 {prev_artifact['source_data']}
 ---
-
 VERSIÓN ANTERIOR DEL INFORME HTML:
 ---
 {prev_artifact['full_content']}
 ---
-
 NUEVA INSTRUCCIÓN DEL USUARIO:
 '{user_message}'
-
 Tu tarea es generar una NUEVA versión del informe HTML completo, usando los DATOS ORIGINALES, pero aplicando la NUEVA INSTRUCCIÓN DEL USUARIO a la VERSIÓN ANTERIOR DEL INFORME.
 """
             print(f"   -> Usando prompt de edición: {prompt_file_name}")
@@ -159,11 +163,14 @@ Tu tarea es generar una NUEVA versión del informe HTML completo, usando los DAT
             
             if "informe del cobre" in user_message.lower():
                 prompt_file_name = 'prompt_cobre.txt'
-                with open(os.path.join(project_root, 'examples', 'ejemplo_cobre.html'), 'r', encoding='utf-8') as f: html_example = f.read()
-                with open(os.path.join(project_root, 'Prompts', prompt_file_name), 'r', encoding='utf-8') as f: synthesis_system_prompt = f.read() + "\n\n### EJEMPLO DE FORMATO DE SALIDA HTML ###\n" + html_example
+                example_path = os.path.join(project_root, 'data', 'examples', 'ejemplo_cobre.html')
+                prompt_path = os.path.join(project_root, 'prompts', prompt_file_name)
+                with open(example_path, 'r', encoding='utf-8') as f: html_example = f.read()
+                with open(prompt_path, 'r', encoding='utf-8') as f: synthesis_system_prompt = f.read() + "\n\n### EJEMPLO DE FORMATO DE SALIDA HTML ###\n" + html_example
             else:
                 prompt_file_name = 'prompt_quantex.txt'
-                with open(os.path.join(project_root, 'Prompts', prompt_file_name), 'r', encoding='utf-8') as f: synthesis_system_prompt = f.read()
+                prompt_path = os.path.join(project_root, 'prompts', prompt_file_name)
+                with open(prompt_path, 'r', encoding='utf-8') as f: synthesis_system_prompt = f.read()
             
             print(f"   -> Usando prompt: {prompt_file_name}")
             final_prompt_for_llm = f"DATOS RECOLECTADOS:\n---\n{source_data_for_saving}\n---\n\nCon base en los datos anteriores, y siguiendo estrictamente tus instrucciones y formato, responde a la siguiente petición original del usuario: {user_message}"
@@ -173,7 +180,6 @@ Tu tarea es generar una NUEVA versión del informe HTML completo, usando los DAT
         
         html_start_tag = "<!DOCTYPE html"
         html_start_index = final_response_text.find(html_start_tag)
-
         if html_start_index != -1:
             html_content = final_response_text[html_start_index:]
             print("   -> [Orquestador] Detectado informe HTML. Guardando en 'generated_artifacts'...")
@@ -186,10 +192,9 @@ Tu tarea es generar una NUEVA versión del informe HTML completo, usando los DAT
                 else:
                     new_version = 1
                     parent_id = None
-                    # source_data_for_saving fue definida en el flujo de creación
-                    artifact_type = 'cobre' # TODO: Hacer esto dinámico
+                    artifact_type = 'cobre' 
 
-                artifact_payload = {'artifact_type': artifact_type, 'version': new_version, 'source_data': source_data_to_save, 'full_content': html_content, 'user_prompt': user_message, 'parent_artifact_id': parent_id}
+                artifact_payload = {'artifact_type': artifact_type, 'version': new_version, 'source_data': source_data_for_saving, 'full_content': html_content, 'user_prompt': user_message, 'parent_artifact_id': parent_id}
                 insert_res = supabase.table('generated_artifacts').insert(artifact_payload).execute()
                 
                 if insert_res.data:
@@ -209,4 +214,6 @@ Tu tarea es generar una NUEVA versión del informe HTML completo, usando los DAT
         return jsonify({"text_response": "Lo siento, ocurrió un error grave."})
 
 if __name__ == "__main__":
+    # Para ejecutar este servidor, el comando sería:
+    # flask --app quantex/api/server:app run
     app.run(debug=True, port=5001)
